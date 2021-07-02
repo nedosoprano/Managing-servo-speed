@@ -1,0 +1,67 @@
+#include <LiquidCrystal.h>
+#include <Servo.h>
+#define motorPin 1
+#define potentiometerPin A0
+#define minDelay 6
+#define maxDelay 250
+
+LiquidCrystal lcd(12, 11, 5, 4, 3, 2);
+Servo motor;
+int del, motorPosirion, voltage;
+float speed;
+bool clockwise;
+
+void motorStep(){
+  if(clockwise){
+    motor.write(--motorPosirion);
+    if(motorPosirion == 0) clockwise = false;
+  }
+  else {
+    motor.write(++motorPosirion);
+    if(motorPosirion == 180) clockwise = true;
+  }
+}
+
+void setDelayValue(){
+  del = map(voltage, 0, 1023, maxDelay, minDelay);
+}
+
+void setSpeedValue(){
+  speed = (float)60*del/1000;
+}
+
+void outputSpeed(){
+  lcd.setCursor(0, 0);
+  lcd.print("     ");
+  lcd.setCursor(0, 0);
+  lcd.print(speed);
+}
+
+bool isVoltageChanched(){
+  if(analogRead(potentiometerPin) == voltage) return false;
+  voltage = analogRead(potentiometerPin);
+  return true;
+}
+
+void setup() {
+  voltage = analogRead(potentiometerPin);
+  setDelayValue();
+  setSpeedValue();
+  motorPosirion = 0;
+  clockwise = false;
+  lcd.begin(16, 2);
+  lcd.print(speed);
+  lcd.setCursor(0, 1);
+  lcd.print("sec/60 degrees");
+  motor.attach(motorPin);
+}
+
+void loop() {
+  if(isVoltageChanched()){
+  	setDelayValue();
+  	setSpeedValue();
+  	outputSpeed();
+  }
+  motorStep();
+  delay(del);
+}
