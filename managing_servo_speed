@@ -1,6 +1,6 @@
 #include <LiquidCrystal.h>
 #include <Servo.h>
-#define motorPin 1
+#define motorPin 1 
 #define potentiometerPin A0
 #define minDelay 6
 #define maxDelay 250
@@ -11,7 +11,7 @@ int del, motorPosirion, voltage;
 float speed;
 bool clockwise;
 
-void motorStep(){
+void motorStep(){ // making one motor step
   if(clockwise){
     motor.write(--motorPosirion);
     if(motorPosirion == 0) clockwise = false;
@@ -22,22 +22,22 @@ void motorStep(){
   }
 }
 
-void setDelayValue(){
+void setDelayValue(){ // updating delay value for updating speed
   del = map(voltage, 0, 1023, maxDelay, minDelay);
 }
 
-void setSpeedValue(){
+void setSpeedValue(){ // updating speed value (sec/60°)
   speed = (float)60*del/1000;
 }
 
-void outputSpeed(){
+void outputSpeed(){ // outputing speed value on the lcd
   lcd.setCursor(0, 0);
   lcd.print("     ");
   lcd.setCursor(0, 0);
   lcd.print(speed);
 }
 
-bool isVoltageChanched(){
+bool isVoltageChanched(){ // checking rotation side of the motor
   if(analogRead(potentiometerPin) == voltage) return false;
   voltage = analogRead(potentiometerPin);
   return true;
