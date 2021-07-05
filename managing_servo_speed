@@ -1,24 +1,24 @@
 #include <LiquidCrystal.h>
 #include <Servo.h>
-#define motorPin 1 
+#define motorPin 1
 #define potentiometerPin A0
 #define minDelay 6
 #define maxDelay 250
 
 LiquidCrystal lcd(12, 11, 5, 4, 3, 2);
 Servo motor;
-int del, motorPosirion, voltage;
+int del, motorPosition, voltage;
 float speed;
 bool clockwise;
 
-void motorStep(){ // making one motor step
+void motorStep(){ // making one motor's step
   if(clockwise){
-    motor.write(--motorPosirion);
-    if(motorPosirion == 0) clockwise = false;
+    motor.write(--motorPosition);
+    if(motorPosition == 0) clockwise = false;
   }
   else {
-    motor.write(++motorPosirion);
-    if(motorPosirion == 180) clockwise = true;
+    motor.write(++motorPosition);
+    if(motorPosition == 180) clockwise = true;
   }
 }
 
@@ -37,9 +37,10 @@ void outputSpeed(){ // outputing speed value on the lcd
   lcd.print(speed);
 }
 
-bool isVoltageChanched(){ // checking rotation side of the motor
-  if(analogRead(potentiometerPin) == voltage) return false;
-  voltage = analogRead(potentiometerPin);
+bool isVoltageChanched(){ // checking change of voltage
+  int currentVoltage = analogRead(potentiometerPin);
+  if(currentVoltage == voltage) return false;
+  voltage = currentVoltage;
   return true;
 }
 
@@ -47,21 +48,41 @@ void setup() {
   voltage = analogRead(potentiometerPin);
   setDelayValue();
   setSpeedValue();
-  motorPosirion = 0;
+  motorPosition = 0;
   clockwise = false;
+  
   lcd.begin(16, 2);
   lcd.print(speed);
   lcd.setCursor(0, 1);
   lcd.print("sec/60 degrees");
-  motor.attach(motorPin);
+  
+  pinMode(potentiometerPin, INPUT);
+  
+  motor.attach(motorPin);  
+  
+  noInterrupts();
+  
+  TCCR2A = 0;
+  TCCR2B = 0;
+  TCNT2 = 130;
+  TCCR2B |= (1 << CS20)|(1 << CS22); 
+  TIMSK2 |= (1 << TOIE2);
+  
+  interrupts();  
+  
+  motor.attach(motorPin);  
+}
+
+ISR(TIMER2_OVF_vect){ // checking changes every 8 msec
+  TCNT2 = 130;
+  if(isVoltageChanched()){
+    setDelayValue();
+    setSpeedValue();
+    outputSpeed();
+  }
 }
 
 void loop() {
-  if(isVoltageChanched()){
-  	setDelayValue();
-  	setSpeedValue();
-  	outputSpeed();
-  }
   motorStep();
   delay(del);
 }
